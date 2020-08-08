@@ -26,11 +26,17 @@ mongoose.connect(dbString, function(err) {
     request({uri: 'http://127.0.0.1:' + settings.port + '/api/getpeerinfo', json: true}, function (error, response, body) {
       lib.syncLoop(body.length, function (loop) {
         var i = loop.iteration();
-        var address = body[i].addr.split(':')[0];
-        var port = body[i].addr.split(':')[1];
+        var portSplit = body[i].addr.lastIndexOf(":");
+        var port = "";
+        if (portSplit < 0) {
+          portSplit = body[i].addr.length;
+        } else {
+          port = body[i].addr.substring(portSplit+1);
+        }
+        var address = body[i].addr.substring(0,portSplit);
         db.find_peer(address, function(peer) {
           if (peer) {
-            if (isNaN(peer['port']) || peer['port'].length < 2 || peer['country'].length < 1) {
+            if (isNaN(peer['port']) || peer['port'].length < 2 || peer['country'].length < 1 || peer['country_code'].length < 1) {
               db.drop_peers(function() {
                 console.log('Saved peers missing ports or country, dropping peers. Re-reun this script afterwards.');
                 exit();
@@ -45,7 +51,8 @@ mongoose.connect(dbString, function(err) {
                 port: port,
                 protocol: body[i].version,
                 version: body[i].subver.replace('/', '').replace('/', ''),
-                country: geo.country_name
+                country: geo.country_name,
+                country_code: geo.country_code
               }, function(){
                 loop.next();
               });

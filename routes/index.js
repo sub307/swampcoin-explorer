@@ -29,7 +29,18 @@ function route_get_block(res, blockhash) {
         });
       }
     } else {
-      route_get_index(res, 'Block not found: ' + blockhash);
+      if (!isNaN(blockhash)) {
+        var height = blockhash;
+        lib.get_blockhash(height, function(hash) {
+          if (hash != 'There was an error. Check your console.') {
+            res.redirect('/block/' + hash);
+          } else {
+            route_get_index(res, 'Block not found: ' + blockhash);
+          }
+        });
+      } else {
+        route_get_index(res, 'Block not found: ' + blockhash);
+      }
     }
   });
 }
@@ -135,7 +146,7 @@ router.get('/markets/:market', function(req, res) {
       /*if (market === 'bittrex') {
         data = JSON.parse(data);
       }*/
-      console.log(data);
+      // console.log(data);
       res.render('./markets/' + market, {
         active: 'markets',
         marketdata: {
